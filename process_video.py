@@ -1,6 +1,7 @@
 import os
 from tqdm import tqdm
 import multiprocessing as mp
+import pandas as pd
 
 from pipeline.capture_video import CaptureVideo
 from pipeline.capture_frames import CaptureFrames
@@ -129,11 +130,33 @@ def main(args):
                 save_video)
 
     # Iterate through pipeline
+    
+    filename = args.input   
+    accumulator = []
+    
     try:
-        for _ in tqdm(pipeline,
+        for i in tqdm(pipeline,
                       total=capture_video.frame_count if capture_video.frame_count > 0 else None,
                       disable=not args.progress):
-            pass
+            # Bounding box and frames
+            boxes = i['predictions']['instances'].pred_boxes.tensor.cpu().flatten().tolist()
+            frame_id = i['image_id']
+            row = [
+                  filename, 
+                  frame_id,
+                  boxes              
+                   ]
+            accumulator.append(row)
+            
+            #pass
+        columns = [
+            'video_file', 'frame_id', 'bbox'
+                ]
+        # Save csv
+        df = pd.DataFrame(accumulator, columns=columns)
+        df.to_csv('./output/csv/inference_data.csv', index = False)
+            
+          
     except StopIteration:
         return
     except KeyboardInterrupt:
