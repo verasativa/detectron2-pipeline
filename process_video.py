@@ -1,4 +1,5 @@
 import os
+from turtle import width
 from tqdm import tqdm
 import multiprocessing as mp
 import pandas as pd
@@ -129,33 +130,50 @@ def main(args):
                 display_video |
                 save_video)
 
-    # Iterate through pipeline
+    
     
     filename = args.input   
     accumulator = []
-    
+
+    # Iterate through pipeline    
     try:
         for i in tqdm(pipeline,
                       total=capture_video.frame_count if capture_video.frame_count > 0 else None,
                       disable=not args.progress):
-            # Bounding box and frames
-            boxes = i['predictions']['instances'].pred_boxes.tensor.cpu().flatten().tolist()
-            frame_id = i['image_id']
+            # Get bounding box and frames
+            #print(i)
+            boxes       = i['predictions']['instances'].pred_boxes.tensor.cpu().flatten().tolist()
+            scores      = i['predictions']['instances'].scores.flatten().tolist()[0]
+            height      = i['predictions']['instances'].image_size[0]
+            width       = i['predictions']['instances'].image_size[1]
+            frame_id    = i['image_id']
+            
             row = [
                   filename, 
                   frame_id,
+                  height,
+                  width,
+                  scores,
                   boxes              
                    ]
             accumulator.append(row)
+                    
             
-            #pass
+        # Columns DataFrame
         columns = [
-            'video_file', 'frame_id', 'bbox'
-                ]
-        # Save csv
+                    'video_file', 'frame_id', 'height', 'width', 'score', 'bbox'
+                  ]
+
+        # Save Dataframe
         df = pd.DataFrame(accumulator, columns=columns)
-        df.to_csv('./output/csv/inference_data.csv', index = False)
-            
+
+        # Save csv in output dir
+        # TO DO: change dir
+
+        out    = args.out_video.split('.')[-2].split('/')[-1] +'.csv'
+        output = os.path.join(args.output, out)
+        df.to_csv(output, index = False)
+                    
           
     except StopIteration:
         return
