@@ -142,8 +142,10 @@ def main(args):
                       disable=not args.progress):
             # Get bounding box and frames
             #print(i)
-            boxes       = i['predictions']['instances'].pred_boxes.tensor.cpu().flatten().tolist()
-            scores      = i['predictions']['instances'].scores.flatten().tolist()[0]
+            boxes       = i['predictions']['instances'].pred_boxes.tensor.cpu().tolist()
+            #print(boxes)
+            scores      = i['predictions']['instances'].scores.flatten().tolist()
+            #print(scores)
             height      = i['predictions']['instances'].image_size[0]
             width       = i['predictions']['instances'].image_size[1]
             frame_id    = i['image_id']
